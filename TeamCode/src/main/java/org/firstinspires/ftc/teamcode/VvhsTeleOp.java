@@ -1,6 +1,8 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.pedropathing.revhub.localizers.PinpointLocalizer;
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -10,48 +12,56 @@ import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-/*
- * Holonomic drives provide the ability for the robot to move in three axes (directions) simultaneously.
- * Each motion axis is controlled by one Joystick axis.
- *
- * 1) vertical:    Driving forward and backward               Left-joystick Forward/Backward
- * 2) horizontal:  Strafing right and left                     Left-joystick Right and Left
- * 3) turn:      Rotating Clockwise and counter clockwise    Right-joystick Right and Left
- *
- * This code is written assuming that the right-side motors need to be reversed for the robot to drive forward.
- * When you first test your robot, if it moves backward when you push the left stick forward, then you must flip
- * the direction of all 4 motors (see code below).
- *
- * Use Android Studio to Copy this Class, and Paste it into your team's code folder with a new name.
- * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list
- */
 
-@TeleOp(name="VvhsTeleOp", group="Linear OpMode")
+
+@TeleOp(name="VvhsTeleOp")
 public class VvhsTeleOp extends LinearOpMode {
 
     // Declare OpMode members for each of the 4 motors.
-    private ElapsedTime runtime = new ElapsedTime();
-    private DcMotor frontLeft = null;
-    private DcMotor backLeft = null;
-    private DcMotor frontRight = null;
-    private DcMotor backRight = null;
+     ElapsedTime runtime = new ElapsedTime();
+     DcMotor frontLeft = null;
+     DcMotor backLeft = null;
+     DcMotor frontRight = null;
+     DcMotor backRight = null;
+     DcMotorEx launcher=null;
+     DcMotor intake =null;
+     CRServo transferBlock;
+     DcMotor turretrotateer=null;
+
+    private GoBildaPinpointDriver pinpoint=null;
 
     @Override
     public void runOpMode() {
 
-        // Initialize the hardware variables. Note that the strings used here must correspond
-        // to the names assigned during the robot configuration step on the DS or RC devices.
+        //Init
+        //Initialize all Wheel Motors
         frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
         backRight = hardwareMap.get(DcMotor.class, "backRight");
 
+
+        intake = hardwareMap.get(DcMotor.class, "intake");
+        launcher = hardwareMap.get(DcMotorEx.class, "launcher");
+        transferBlock = hardwareMap.get(CRServo.class, "transferBlock");
+
+        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
+
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
         frontRight.setDirection(DcMotor.Direction.FORWARD);
         backRight.setDirection(DcMotor.Direction.FORWARD);
+        backLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+
+
+
+        intake.setDirection(DcMotorSimple.Direction.REVERSE);
+        launcher.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        launcher.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
@@ -63,26 +73,111 @@ public class VvhsTeleOp extends LinearOpMode {
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive())
         {
-            driveAndTurn();
+
+            mecanumDrive();
+
+
+            if (gamepad1.left_trigger > 0.1 || gamepad2.left_trigger > 0.1)
+            {
+                intake.setPower(1);
+            }
+            else if(gamepad1.triangle || gamepad2.triangle)
+            {
+                intake.setPower(-0.4);
+                launcher.setVelocity(-2000);
+            }
+            {
+                intake.setPower(0);
+            }
+
+            if(gamepad1.square)
+            {
+                transferBlock.setPower(-0.5);
+            }
+            else {
+                transferBlock.setPower(0);
+            }
+
+            telemetry.addData("Shooter: ", launcher.getVelocity());
+            if (gamepad2.right_trigger > 0.1)
+            {
+                launcher.setVelocity(1700);
+            }
+            else
+            {
+                launcher.setVelocity(0);
+            }
 
         }
     }
 
-    public void driveAndTurn()
+
+    public void shooterFunction(){
+        telemetry.addData("Shooter: ", launcher.getVelocity());
+//        if(gamepad2.left_bumper)
+//        {
+//            turretrotateer.setPower(1);
+//        }
+//        if(gamepad2.right_bumper)
+//        {
+//            turretrotateer.setPower(-1);
+//        }
+//        else {
+//            turretrotateer.setPower(0);
+//        }
+
+        if (gamepad2.right_trigger > 0.1)
+        {
+            launcher.setVelocity(1700);
+        }
+        else
+        {
+            launcher.setVelocity(0);
+        }
+
+//        if(gamepad1.dpad_up)
+//        {
+//            spring.setPosition(0.5);
+//        }
+//        if(gamepad1.dpad_down)
+//        {
+//            spring.setPosition(0);
+//        }
+
+
+    }
+
+    public void intaker()
+    {
+        if (gamepad1.left_trigger > 0.1 || gamepad2.left_trigger > 0.1)
+        {
+            intake.setPower(1);
+        }
+        else if(gamepad1.triangle || gamepad2.triangle)
+        {
+            intake.setPower(-0.4);
+            launcher.setVelocity(-2000);
+        }
+        {
+            intake.setPower(0);
+        }
+    }
+
+    public void mecanumDrive()
     {
         double max;
 
-        // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
-        double vertical  = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
-        double horizontal =  gamepad1.left_stick_x;
-        double turn     =  gamepad1.right_stick_x;
+        // uses left joystick to go forward & strafe, and right joystick to rotate.
+        double vertical = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
+        double strafe = gamepad1.left_stick_x;
+        double rotate =  gamepad1.right_stick_x;
 
         // Combine the joystick requests for each axis-motion to determine each wheel's power.
         // Set up a variable for each drive wheel to save the power level for telemetry.
-        double frontLeftPower  = vertical + horizontal + turn;
-        double frontRightPower = vertical - horizontal - turn;
-        double backLeftPower   = vertical - horizontal + turn;
-        double backRightPower  = vertical + horizontal - turn;
+        double frontLeftPower = vertical + strafe + rotate;
+        double frontRightPower = vertical - strafe - rotate;
+        double backLeftPower = vertical - strafe + rotate;
+        double backRightPower = vertical + strafe - rotate;
 
         // Normalize the values so no wheel power exceeds 100%
         // This ensures that the robot maintains the desired motion.
