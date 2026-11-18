@@ -25,6 +25,7 @@ public class VvhsTeleOp extends LinearOpMode {
      ElapsedTime runtime = new ElapsedTime();
      DcMotor frontLeft = null;
      DcMotor backLeft = null;
+     //declaring the motors as null instead of just leaving them blank is an ick
      DcMotor frontRight = null;
      DcMotor backRight = null;
      DcMotorEx launcher=null;
